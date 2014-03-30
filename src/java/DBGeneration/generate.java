@@ -6,8 +6,19 @@
 
 package DBGeneration;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -31,9 +42,15 @@ public class generate extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws ServletException, IOException, ClassNotFoundException, SQLException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
+            
+            String urlOfXML = request.getParameter("urlOfXML");
+            long startNum = Long.parseLong(request.getParameter("startNum"));
+            long endNum = Long.parseLong(request.getParameter("endNum"));
+            String nameOfDB = request.getParameter("nameOfDB");
+            
             /* TODO output your page here. You may use following sample code. */
             out.println("<!DOCTYPE html>");
             out.println("<html>");
@@ -41,7 +58,44 @@ public class generate extends HttpServlet {
             out.println("<title>Servlet generate</title>");            
             out.println("</head>");
             out.println("<body>");
-            out.println("<h1>Servlet generate at " + request.getContextPath() + "</h1>");
+            out.println("<h3>Servlet generate at " + request.getContextPath() + "</h3>");
+            out.println("<br>");
+            out.println("<br>");
+            
+            Class.forName("com.mysql.jdbc.Driver");
+            String connectionURL = "jdbc:mysql://localhost:3306/xml_data_builder_db";
+            Connection conn = DriverManager.getConnection (connectionURL,"root","");
+            Statement stmt = conn.createStatement();
+            ResultSet rs;
+            
+            out.println("Database created successfully...");
+            out.println("<br>");
+            
+            String line;
+            String tableName;
+            
+            FileReader fr;
+            BufferedReader br;
+            
+            Pattern patternObj;
+            Matcher matcherObj;
+            Matcher matcherObj2;
+            
+            for(long i=startNum;i<=endNum;i++){
+                
+                fr = new FileReader(urlOfXML + "/" + i + ".xml");
+                br = new BufferedReader(fr);
+                
+                while((line = br.readLine()) != null){
+                    patternObj = Pattern.compile(line);
+                    matcherObj = patternObj.matcher("BaseID");
+                    matcherObj2 = patternObj.matcher("/BaseID");
+                    if(matcherObj.find() && !(matcherObj2.find())){
+                        
+                    }
+                }
+            }
+            
             out.println("</body>");
             out.println("</html>");
         }
@@ -59,7 +113,11 @@ public class generate extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        try {
+            processRequest(request, response);
+        } catch (ClassNotFoundException | SQLException ex) {
+            Logger.getLogger(generate.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
@@ -73,7 +131,11 @@ public class generate extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        try {
+            processRequest(request, response);
+        } catch (ClassNotFoundException | SQLException ex) {
+            Logger.getLogger(generate.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**

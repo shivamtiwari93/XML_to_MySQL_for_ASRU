@@ -49,7 +49,7 @@ public class login extends HttpServlet {
             String user = request.getParameter("user");
             String pass = request.getParameter("pass");
             
-            System.out.println(user + " " + pass);
+            //System.out.println(user + " " + pass);
             
             rs = stmt.executeQuery("select * from login where username='"+user+"' and password='"+pass+"'");
                 
@@ -65,7 +65,7 @@ public class login extends HttpServlet {
                 out.println("Welcome, " +user);
                 out.println("<br>");
                 out.println("<br>");
-                out.println("<a href='./DBGeneration/'Proceed to MySQL DB generation</a>");
+                out.println("<a href='./DBGeneration/'>Proceed to MySQL DB generation</a>");
             }
             else{
                 out.println("Wrong Username or Password");

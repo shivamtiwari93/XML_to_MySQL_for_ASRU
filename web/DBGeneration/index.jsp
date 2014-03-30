@@ -12,6 +12,15 @@
         <title>JSP Page</title>
     </head>
     <body>
-        <h1>Hello World!</h1>
+        <h1 align="center">Fill details of XML files</h1>
+        <p>
+            <form action="generate" method="post">
+                URL of the XML folder       :   <input type="text" name ="urlOfXML"><br><br>
+                Starting file number        :   <input type="text" name="startNum"><br><br>
+                Ending file number          :   <input type="text" name="endNum"><br><br>
+                Name of DataBase to make    :   <input type="text" name="nameOfDB"><br><br>
+                <input type="submit" value="Confirm">
+            </form>
+        </p>
     </body>
 </html>
