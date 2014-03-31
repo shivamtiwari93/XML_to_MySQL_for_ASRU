@@ -72,7 +72,8 @@ public class generate extends HttpServlet {
             out.println("<br>");
             
             String line;
-            String tableName;
+            //String tableName;
+            String createTableQuery = null;
             
             FileReader fr;
             BufferedReader br;
@@ -90,9 +91,32 @@ public class generate extends HttpServlet {
                     patternObj = Pattern.compile(line);
                     matcherObj = patternObj.matcher("BaseID");
                     matcherObj2 = patternObj.matcher("/BaseID");
+                    
                     if(matcherObj.find() && !(matcherObj2.find())){
                         
+                        line = line.replace("<", "");
+                        line = line.replace(">", "");
+                        
+                        createTableQuery = "CREATE TABLE " + line + " (Time varchar(255)";
                     }
+                    
+                    patternObj = Pattern.compile(line);
+                    matcherObj = patternObj.matcher("Switch");
+                    matcherObj2 = patternObj.matcher("/Switch");
+                    
+                    if(matcherObj.find() && !(matcherObj2.find())){
+                        
+                        line = line.replace("<", "");
+                        line = line.replace(">", "");
+                        
+                        createTableQuery = createTableQuery + ", " +line + " varchar(15)";
+                    }
+                }
+                
+                createTableQuery = createTableQuery + ");";
+                
+                if(!(stmt.execute(createTableQuery))){
+                    out.println("Table creation failed.");
                 }
             }
             
