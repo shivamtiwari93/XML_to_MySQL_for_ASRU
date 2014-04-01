@@ -6,10 +6,10 @@
 
 package DBGeneration;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.RandomAccessFile;
+import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -24,6 +24,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 
 /**
  *
@@ -40,16 +41,19 @@ public class generate extends HttpServlet {
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
+     * @throws java.lang.ClassNotFoundException
+     * @throws java.sql.SQLException
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, ClassNotFoundException, SQLException {
+            throws ServletException, IOException, ClassNotFoundException, SQLException, NullPointerException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
             
             String urlOfXML = request.getParameter("urlOfXML");
-            long startNum = Long.parseLong(request.getParameter("startNum"));
-            long endNum = Long.parseLong(request.getParameter("endNum"));
+            int startNum = (int) Long.parseLong(request.getParameter("startNum"));
+            int endNum = (int) Long.parseLong(request.getParameter("endNum"));
             String nameOfDB = request.getParameter("nameOfDB");
+            int i;
             
             /* TODO output your page here. You may use following sample code. */
             out.println("<!DOCTYPE html>");
@@ -63,63 +67,141 @@ public class generate extends HttpServlet {
             out.println("<br>");
             
             Class.forName("com.mysql.jdbc.Driver");
-            String connectionURL = "jdbc:mysql://localhost:3306/xml_data_builder_db";
+            String connectionURL = "jdbc:mysql://localhost:3306/?";
             Connection conn = DriverManager.getConnection (connectionURL,"root","");
             Statement stmt = conn.createStatement();
-            ResultSet rs;
+            int r = stmt.executeUpdate("CREATE DATABASE "+ nameOfDB);
             
             out.println("Database created successfully...");
             out.println("<br>");
             
-            String line;
-            //String tableName;
-            String createTableQuery = null;
             
-            FileReader fr;
-            BufferedReader br;
+            
+            Class.forName("com.mysql.jdbc.Driver");
+            connectionURL = "jdbc:mysql://localhost:3306/" + nameOfDB;
+            conn = DriverManager.getConnection (connectionURL,"root","");
+            stmt = conn.createStatement();
+            ResultSet rs;
+            
+            out.println("Database connected successfully...");
+            out.println("<br><br>");
+            
+            String line = null;
+            String createTableQuery = null;
+            String tableName = null;
+            String insertIntoQuery = null;
+            int switchNumber;
             
             Pattern patternObj;
+            Pattern patternObj2;
+            Pattern patternObj3;
+            
             Matcher matcherObj;
             Matcher matcherObj2;
+            Matcher matcherObj3;
             
-            for(long i=startNum;i<=endNum;i++){
+            //out.println(startNum + "," + endNum);
+            
+            for(i = startNum;i <= endNum; i++){
+                                
+                RandomAccessFile file = new RandomAccessFile(urlOfXML + "\\" + i + ".xml", "r");
                 
-                fr = new FileReader(urlOfXML + "/" + i + ".xml");
-                br = new BufferedReader(fr);
-                
-                while((line = br.readLine()) != null){
-                    patternObj = Pattern.compile(line);
-                    matcherObj = patternObj.matcher("BaseID");
-                    matcherObj2 = patternObj.matcher("/BaseID");
+                while((line = file.readLine()) != null){
                     
-                    if(matcherObj.find() && !(matcherObj2.find())){
-                        
-                        line = line.replace("<", "");
-                        line = line.replace(">", "");
-                        
-                        createTableQuery = "CREATE TABLE " + line + " (Time varchar(255)";
-                    }
+                    patternObj = Pattern.compile("BaseID");
+                    matcherObj = patternObj.matcher(line);
                     
-                    patternObj = Pattern.compile(line);
-                    matcherObj = patternObj.matcher("Switch");
-                    matcherObj2 = patternObj.matcher("/Switch");
+                    patternObj2 = Pattern.compile("/BaseID");
+                    matcherObj2 = patternObj2.matcher(line);
                     
-                    if(matcherObj.find() && !(matcherObj2.find())){
-                        
-                        line = line.replace("<", "");
-                        line = line.replace(">", "");
-                        
-                        createTableQuery = createTableQuery + ", " +line + " varchar(15)";
+                    if(matcherObj.find()){
+            
+                        createTableQuery = "CREATE TABLE " + "File" + i + " (SwitchID varchar(23)"; 
                     }
                 }
                 
-                createTableQuery = createTableQuery + ");";
-                
-                if(!(stmt.execute(createTableQuery))){
-                    out.println("Table creation failed.");
+                for(int a=1;a<=60;a++){
+                    
+                    createTableQuery = createTableQuery + ", Time" + a + "min" + " varchar(15)";
                 }
+                
+                createTableQuery += ", PRIMARY KEY (SwitchID));";
+                
+                //createTableQuery = "CREATE TABLE hello (SwitchID varchar(15), rating varchar(15), PRIMARY KEY(SwitchID));";
+                
+                out.println(createTableQuery + "<br>");
+                
+                //out.println("<br><br>Check<Br><br>");
+
+                
+                if((stmt.executeUpdate(createTableQuery)) != 0){
+                    
+                    out.println("Table creation failed");
+                    out.println("<br>");
+                }
+                else{
+                    
+                    out.println("Table creation successful");
+                    out.println("<br>");
+                }
+
+                /*fr2[i - (int) startNum] = new FileReader(urlOfXML + "/" + i + ".xml");
+                br2[i - (int) startNum] = new BufferedReader(fr2[i - (int) startNum]);*/
+                
+                file.seek(0);
+                
+                
+                switchNumber = 1;
+
+                while((line = URLEncoder.encode(file.readLine())) != null){
+
+                    
+                    patternObj = Pattern.compile("3C");
+                    matcherObj = patternObj.matcher(line);
+                    
+                    patternObj2 = Pattern.compile("Switch");
+                    matcherObj2 = patternObj2.matcher(line);
+                    
+                    patternObj3 = Pattern.compile("/Base");
+                    matcherObj3 = patternObj3.matcher(line);
+                    
+                    if(matcherObj2.find()){
+                        
+                        switchNumber++;
+                        if(switchNumber % 2 == 0){
+                            
+                            insertIntoQuery = "INSERT INTO File" + i + " VALUES ( 'Switch" + switchNumber/2 + "'";
+                        }
+                        else{
+                            
+                            insertIntoQuery += ");";
+                            
+                            out.println("<br><br>" +insertIntoQuery + "<br><br>");
+                            
+                            if(stmt.executeUpdate(insertIntoQuery) != 0){
+                                out.println("Record inserted successfully.<br>");
+                            }
+                            else{
+                                out.println("Record insertion failed.<br>");
+                            }
+                        }                      
+                    }
+                    
+                    else if(matcherObj.find()){
+                        //nothing  
+                    }
+                    
+                    else{
+                        insertIntoQuery += ", " + line;
+                    }
+                   
+                }
+               
+                file.close();
             }
             
+            out.println("All queries attempted.");
+            out.println("<br>");
             out.println("</body>");
             out.println("</html>");
         }
