@@ -95,18 +95,22 @@ public class generate extends HttpServlet {
             Pattern patternObj;
             Pattern patternObj2;
             Pattern patternObj3;
+            Pattern patternObj4;
             
             Matcher matcherObj;
             Matcher matcherObj2;
             Matcher matcherObj3;
+            Matcher matcherObj4;
+            
+            RandomAccessFile[] fileArray = new RandomAccessFile[endNum - startNum + 1];
             
             //out.println(startNum + "," + endNum);
             
             for(i = startNum;i <= endNum; i++){
                                 
-                RandomAccessFile file = new RandomAccessFile(urlOfXML + "\\" + i + ".xml", "r");
+                fileArray[i - startNum] = new RandomAccessFile(urlOfXML + "\\" + i + ".xml", "r");
                 
-                while((line = file.readLine()) != null){
+                while((line = fileArray[i - startNum].readLine()) != null){
                     
                     patternObj = Pattern.compile("BaseID");
                     matcherObj = patternObj.matcher(line);
@@ -116,7 +120,9 @@ public class generate extends HttpServlet {
                     
                     if(matcherObj.find()){
             
-                        createTableQuery = "CREATE TABLE " + "File" + i + " (SwitchID varchar(23)"; 
+                        createTableQuery = "CREATE TABLE " + "File" + i + " (SwitchID varchar(23)";
+                        
+                        break;
                     }
                 }
                 
@@ -148,14 +154,18 @@ public class generate extends HttpServlet {
                 /*fr2[i - (int) startNum] = new FileReader(urlOfXML + "/" + i + ".xml");
                 br2[i - (int) startNum] = new BufferedReader(fr2[i - (int) startNum]);*/
                 
-                file.seek(0);
+                fileArray[i - startNum].seek(0);
                 
                 
                 switchNumber = 1;
 
-                while((line = URLEncoder.encode(file.readLine())) != null){
-
+                while((line = URLEncoder.encode(fileArray[i - startNum].readLine())) != null){
+                
+                //while((line = file.readLine()) != null){
                     
+                    //out.println("<p>" + line + "</p>");
+                    
+
                     patternObj = Pattern.compile("3C");
                     matcherObj = patternObj.matcher(line);
                     
@@ -165,7 +175,15 @@ public class generate extends HttpServlet {
                     patternObj3 = Pattern.compile("/Base");
                     matcherObj3 = patternObj3.matcher(line);
                     
-                    if(matcherObj2.find()){
+                    patternObj4 = Pattern.compile("%3C%2FBaseID%3A");
+                    matcherObj4 = patternObj4.matcher(line);
+                    
+                    if(matcherObj4.find()){
+                        
+                        break;
+                    }
+                    
+                    else if(matcherObj2.find()){
                         
                         switchNumber++;
                         if(switchNumber % 2 == 0){
@@ -180,6 +198,7 @@ public class generate extends HttpServlet {
                             
                             if(stmt.executeUpdate(insertIntoQuery) != 0){
                                 out.println("Record inserted successfully.<br>");
+                                //break;
                             }
                             else{
                                 out.println("Record insertion failed.<br>");
@@ -188,7 +207,7 @@ public class generate extends HttpServlet {
                     }
                     
                     else if(matcherObj.find()){
-                        //nothing  
+                    //nothing
                     }
                     
                     else{
@@ -197,7 +216,7 @@ public class generate extends HttpServlet {
                    
                 }
                
-                file.close();
+                fileArray[i - startNum].close();
             }
             
             out.println("All queries attempted.");
